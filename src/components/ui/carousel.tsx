@@ -19,6 +19,7 @@ type CarouselProps = {
   plugins?: CarouselPlugin;
   orientation?: "horizontal" | "vertical";
   setApi?: (api: CarouselApi) => void;
+  onLastItemVisible?: (visible: boolean) => void; // Add an additional prop for Next button
 };
 
 type CarouselContextProps = {
@@ -68,14 +69,25 @@ const Carousel = React.forwardRef<
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-    const onSelect = React.useCallback((api: CarouselApi) => {
-      if (!api) {
-        return;
-      }
+    const onSelect = React.useCallback(
+      (api: CarouselApi) => {
+        if (!api) {
+          return;
+        }
 
-      setCanScrollPrev(api.canScrollPrev());
-      setCanScrollNext(api.canScrollNext());
-    }, []);
+        const _canScrollPrev = api.canScrollPrev();
+        const _canScrollNext = api.canScrollNext();
+
+        setCanScrollPrev(_canScrollPrev);
+        setCanScrollNext(_canScrollNext);
+
+        // invoke the onLastItemVisible callback for Next button
+        if (props.onLastItemVisible) {
+          props.onLastItemVisible(!_canScrollNext); // When it cannot scroll next, it's the last item
+        }
+      },
+      [props.onLastItemVisible]
+    );
 
     const scrollPrev = React.useCallback(() => {
       api?.scrollPrev();

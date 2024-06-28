@@ -46,7 +46,7 @@ import {
 } from "@dnd-kit/core";
 import DraggableItem from "../Elements/dragAndDrop/DraggableItem";
 import DroppableArea from "../Elements/dragAndDrop/DroppableArea";
-import ChapterNotFound from "@/components/ChapterNotFound";
+// import ChapterNotFound from "@/components/ChapterNotFound";
 
 interface FlipState {
   [index: number]: boolean;
@@ -76,6 +76,18 @@ function SlidesDisplay() {
   const [flip, setFlip] = useState<FlipState>({});
   // Slider state
   const [sliderValue, setSliderValue] = useState(2.5);
+
+  // Define State for Each Condition of Next button
+  const [isSlideComplete, setIsSlideComplete] = useState<boolean>(false);
+  const [isQuizAnswered, setIsQuizAnswered] = useState<boolean>(false);
+  const [isAccordionExpanded, setIsAccordionExpanded] = useState(false);
+  const [isRevealFlipped, setIsRevealFlipped] = useState<boolean>(false);
+  const [isSequenceCompleted, setIsSequenceCompleted] =
+    useState<boolean>(false);
+  const [isRangeChanged, setIsRangeChanged] = useState<boolean>(false);
+  const [isDndCompleted, setIsDndCompleted] = useState<boolean>(false);
+  const [isAudioPlayed, setIsAudioPlayed] = useState<boolean>(false);
+  const [isVideoClicked, setIsVideoClicked] = useState<boolean>(false);
 
   const { courseId, chapterId } = useParams<{
     courseId: string;
@@ -165,7 +177,8 @@ function SlidesDisplay() {
 
   // If the chapter is not found, handle accordingly
   if (!chapter) {
-    return <ChapterNotFound />;
+    // return <ChapterNotFound />;
+    return <LoadingPage />;
   }
   // Setting the data to slides if the chapter is found
   const data = chapter.slides;
@@ -228,6 +241,7 @@ function SlidesDisplay() {
     }
 
     setShowQuizResult(true);
+    setIsDndCompleted(true); // Next button available when the check answer is confirmed
   };
 
   //isCorrect switch
@@ -344,16 +358,24 @@ function SlidesDisplay() {
 
   // Flip divs on Reveal Element
   const handleFlip = (index: number) => {
-    setFlip((prevState) => ({
-      ...prevState,
-      [index]: !prevState[index], // Toggle the state
-    }));
+    setFlip((prevState) => {
+      const isFlipped = !prevState[index]; // Toggle the state
+      const newState = { ...prevState, [index]: isFlipped };
+
+      // If any item is flipped, update the 'IsRevealFlipped' state for Next button
+      if (isFlipped) {
+        setIsRevealFlipped(true);
+      }
+
+      return newState;
+    });
   };
 
   // Save the state of the slider
   const handleSliderChange = (_: Event, newValue: number | number[]) => {
     if (typeof newValue === "number") {
       setSliderValue(newValue);
+      setIsRangeChanged(true); // Next button available when slider value is changed
     }
   };
 
@@ -393,6 +415,57 @@ function SlidesDisplay() {
   const getYoutubeThumbnailUrl = (videoId: string) => {
     return `https://img.youtube.com/vi/${videoId}/0.jpg`;
   };
+
+  // Update the state indicating whether the accordion is expanded for Next button.
+  const handleAccordionToggle = (values: string) => {
+    // Set `isAccordionExpanded` to true if the accordion has ever been expanded
+    if (values.includes("item-1")) {
+      setIsAccordionExpanded(true);
+    }
+  };
+
+  // Reset Next button conditional states
+  const resetInteractions = () => {
+    setIsSlideComplete(false);
+    setIsQuizAnswered(false);
+    setIsAccordionExpanded(false);
+    setIsRevealFlipped(false);
+    setIsSequenceCompleted(false);
+    setIsRangeChanged(false);
+    setIsDndCompleted(false);
+    setIsAudioPlayed(false);
+    setIsVideoClicked(false);
+  };
+
+  // Next button onClick
+  const moveToNextSlide = () => {
+    updateIndex(activeIndex + 1); // Navigate to the next slide
+    resetInteractions(); // Reset Next button conditional states
+  };
+
+  // Element types whose Next button is always available
+  const isNonInteractiveType = () => {
+    if (!selectedSlide || !selectedSlide.elements) return false;
+    return selectedSlide.elements.every((element) => {
+      return ["title", "sub", "text", "img", "list", "mix"].includes(
+        element.type
+      );
+    });
+  };
+
+  // Conditional Rendering of Next Button
+  const shouldShowNextButton =
+    !isLastSlide &&
+    (isNonInteractiveType() ||
+      isSlideComplete ||
+      isQuizAnswered ||
+      isAccordionExpanded ||
+      isRevealFlipped ||
+      isSequenceCompleted ||
+      isRangeChanged ||
+      isDndCompleted ||
+      isAudioPlayed ||
+      isVideoClicked);
 
   if (isLoading) return <LoadingPage />;
 
@@ -773,6 +846,12 @@ function SlidesDisplay() {
                                     isNavigation: false,
                                     gap: "1rem",
                                   }}
+                                  // Add an event listener to Splide to track when you are on the last slide
+                                  onMoved={(_, newIndex) => {
+                                    if (newIndex === element.value.length - 1) {
+                                      setIsSlideComplete(true);
+                                    }
+                                  }}
                                 >
                                   {listItemsComponent}
                                 </Splide>
@@ -829,7 +908,10 @@ function SlidesDisplay() {
                               <div className="flex mt-4">
                                 <button
                                   className="text-white text-center font-nokia-bold bg-accent-6 hover:bg-accent-7 w-max rounded-3xl mx-auto text-xs1 lg:text-lg xl:text-xl lg:py-1 px-2"
-                                  onClick={() => setShowQuizResult(true)}
+                                  onClick={() => {
+                                    setShowQuizResult(true);
+                                    setIsQuizAnswered(true); //Next button available when the check answer button is clicked
+                                  }}
                                 >
                                   Check Answer
                                 </button>
@@ -844,6 +926,7 @@ function SlidesDisplay() {
                                 key={`$accordion-${index}`}
                                 title={accordionItem.title}
                                 content={accordionItem.content}
+                                onToggle={handleAccordionToggle}
                               />
                             )
                           );
@@ -860,6 +943,9 @@ function SlidesDisplay() {
                                 opts={{
                                   align: "center",
                                 }}
+                                onLastItemVisible={(visible) =>
+                                  setIsSequenceCompleted(visible)
+                                } // Next button available when the carouselItem is on the last sequenceItem.
                                 key={element._id}
                                 className="w-full flex justify-center items-center h-auto"
                               >
@@ -1065,7 +1151,11 @@ function SlidesDisplay() {
                               key={element.id}
                               className="flex flex-col items-center justify-center w-[80%] bg-gray-100 rounded-3xl shadow-md"
                             >
-                              <audio controls className="w-full">
+                              <audio
+                                controls
+                                className="w-full"
+                                onPlay={() => setIsAudioPlayed(true)} // Next button available when played
+                              >
                                 <source
                                   src={`https://ezra-seminary.me/images/${element.value}`}
                                   type="audio/mpeg"
@@ -1086,6 +1176,7 @@ function SlidesDisplay() {
                                 href={element.value}
                                 key={index}
                                 className="relative inline-block"
+                                onClick={() => setIsVideoClicked(true)} // Next button available when clicked
                               >
                                 {videoId ? (
                                   <div className="relative w-[70%] mx-auto rounded-xl border-2 hover:border-accent-5 hover:opacity-90 transition-all">
@@ -1138,16 +1229,16 @@ function SlidesDisplay() {
                 >
                   {currentSlideNumber} / {totalDataNumber}
                 </p>
+
                 <button
                   className={`text-white text-center font-nokia-bold mt-2 bg-accent-6 hover:bg-accent-7 w-auto rounded-3xl mx-auto text-xs1 lg:text-lg xl:text-xl lg:py-1 px-2  ${
-                    isLastSlide ? "hidden" : "block"
+                    shouldShowNextButton ? "block" : "hidden"
                   }`}
-                  onClick={() => {
-                    updateIndex(activeIndex + 1);
-                  }}
+                  onClick={moveToNextSlide}
                 >
                   ቀጥል
                 </button>
+
                 <button
                   className={`text-primary-5 text-center font-nokia-bold mt-2 bg-accent-6 hover:bg-accent-7 w-auto rounded-3xl mx-auto text-xs1 lg:text-sm  lg:py-1 px-2  ${
                     isLastSlide ? "block" : "hidden"

@@ -1,4 +1,3 @@
-// import React, { useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -9,14 +8,16 @@ import {
 interface AccordionItemProps {
   title: string;
   content: string;
+  onToggle: (value: string) => void; // Expect a callback function for Next button
 }
 
 const AccordionItemDisplay: React.FC<AccordionItemProps> = ({
   title,
   content,
+  onToggle,
 }) => {
   return (
-    <Accordion type="single" collapsible>
+    <Accordion type="single" collapsible onValueChange={onToggle}>
       <AccordionItem value="item-1">
         <AccordionTrigger>{title}</AccordionTrigger>
         <AccordionContent>{content}</AccordionContent>
