@@ -7,6 +7,7 @@ import { apiSlice } from "./api-slices/apiSlice";
 import { SSLapi } from "./../services/SabbathSchoolApi";
 import { CourseState } from "./courseSlice";
 import DevotionsState from "./devotionsSlice";
+import { videoLinksApi } from "../services/videoLinksApi";
 
 export interface RootState {
   devotions: typeof DevotionsState;
@@ -22,9 +23,14 @@ const store = configureStore({
     auth: authReducer,
     [SSLapi.reducerPath]: SSLapi.reducer,
     [apiSlice.reducerPath]: apiSlice.reducer,
+    [videoLinksApi.reducerPath]: videoLinksApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(SSLapi.middleware, apiSlice.middleware),
+    getDefaultMiddleware().concat(
+      SSLapi.middleware,
+      apiSlice.middleware,
+      videoLinksApi.middleware
+    ),
 });
 
 type AppDispatch = typeof store.dispatch;

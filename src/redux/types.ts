@@ -67,6 +67,13 @@ export interface DevotionsState {
   isEditing: boolean;
 }
 
+export interface LinkType {
+  quarter: any;
+  lesson: any;
+  id?: string;
+  videoUrl: string;
+}
+
 export interface RootState {
   auth: AuthState;
   user: User;

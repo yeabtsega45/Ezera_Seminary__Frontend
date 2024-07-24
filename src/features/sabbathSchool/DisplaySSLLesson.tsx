@@ -7,9 +7,9 @@ import {
   useGetSSLOfDayQuery,
 } from "../../services/SabbathSchoolApi";
 import parse from "html-react-parser";
-import { YoutubeLogo } from "@phosphor-icons/react";
 import DateConverter from "./DateConverter";
 import Modal from "./modal/Modal";
+import ManageYouTubeLink from "./ManageYoutubeLink";
 
 function DisplaySSLLesson() {
   interface Params {
@@ -112,6 +112,9 @@ function DisplaySSLLesson() {
   if (dayError && "message" in dayError)
     return <div>Error: {dayError.message}</div>;
 
+  const currentYear = new Date().getFullYear();
+  const quarterNumber = quarter?.split("-")[1] ?? ""; // Extract the quarter number
+
   return (
     <div>
       <div
@@ -122,9 +125,11 @@ function DisplaySSLLesson() {
         }}
       >
         <div className="flex justify-end mt-2 md:mt-4">
-          <button className="px-2 border border-primary-1 text-primary-1 text-xs flex rounded-full items-center gap-2 hover:border-accent-6 hover:text-accent-6 transition-all">
-            Watch on YouTube <YoutubeLogo size={24} weight="fill" />
-          </button>
+          <ManageYouTubeLink
+            year={currentYear}
+            quarter={Number(quarterNumber)} // Pass the quarter number
+            lesson={Number(id)}
+          />
         </div>
         <div className="flex flex-col space-y-1">
           <p className="flex flex-row text-primary-5 text-sm lg:text-lg">
@@ -132,7 +137,7 @@ function DisplaySSLLesson() {
             <DateConverter gregorianDate={lessonDetails.date} />
           </p>
           <div className="border-b border-accent-4 w-full mb-2" />
-          <div className="text-xl lg:text-3xl text-primary-0 ">
+          <div className="text-xl lg:text-3xl text-primary-0">
             {lessonDetails.title}
           </div>
         </div>
@@ -146,7 +151,7 @@ function DisplaySSLLesson() {
           {parse(selectedVerse, { trim: true })}
         </Modal>
       )}
-      <div className="text-secondary-6 text-justify wrapper my-4 ">
+      <div className="text-secondary-6 text-justify wrapper my-4">
         {modifyContentForDisplay(lessonDetails.content)}
       </div>
     </div>
